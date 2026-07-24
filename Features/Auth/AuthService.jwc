@@ -1,0 +1,16 @@
+dome AuthService {
+    function findByEmail(email: string): User? {
+        return select User from AppDbContext.User where User.email == @email first;
+    }
+
+    function register(data: RegisterRequest): User {
+        let u = new User();
+        u.email = data.email;
+        u.password_hash = hash_password(data.password);
+        u.first_name = data.first_name;
+        u.last_name = data.last_name;
+        u.created_at = now();
+        insert u into AppDbContext.User;
+        return u;
+    }
+}

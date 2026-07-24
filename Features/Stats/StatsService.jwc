@@ -1,0 +1,32 @@
+dome StatsService {
+    // Roll up a user's finances: how many wallets, total balance across them,
+    // and lifetime income / expense / net from the transaction ledger.
+    function summary(userId: int) {
+        let wallets = select Wallet from AppDbContext.Wallet where Wallet.user_id == @userId;
+        let totalBalance = 0;
+        let walletCount = 0;
+        for w in wallets {
+            totalBalance = totalBalance + w.balance;
+            walletCount = walletCount + 1;
+        }
+
+        let income = 0;
+        let expense = 0;
+        let txs = select Transaction from AppDbContext.Transaction where Transaction.user_id == @userId;
+        for t in txs {
+            if (t.is_income == true) {
+                income = income + t.amount;
+            } else {
+                expense = expense + t.amount;
+            }
+        }
+
+        return {
+            wallets:       walletCount,
+            total_balance: totalBalance,
+            total_income:  income,
+            total_expense: expense,
+            net:           income - expense
+        };
+    }
+}

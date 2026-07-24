@@ -1,0 +1,64 @@
+dome CategoryService {
+    function create(userId: int, name: string, description: string) {
+        let c = new Category();
+        c.name        = name;
+        c.description = description;
+        c.usage_count = 0;
+        c.user_id     = userId;
+        c.created_at  = now();
+        insert c into AppDbContext.Category;
+        return c;
+    }
+
+    function listByUser(userId: int) {
+        return select Category from AppDbContext.Category
+            where Category.user_id == @userId
+            orderby Category.usage_count desc;
+    }
+
+    function getById(id: int): Category? {
+        return select Category from AppDbContext.Category where Category.id == @id first;
+    }
+
+    // Names are unique per user (not globally), so scan this user's categories
+    // for a matching name.
+    function findByName(userId: int, name: string): Category? {
+        let cats = select Category from AppDbContext.Category where Category.user_id == @userId;
+        for c in cats {
+            if (c.name == name) {
+                return c;
+            }
+        }
+        return null;
+    }
+
+    function update(id: int, req: UpdateCategoryRequest) {
+        let c = select Category from AppDbContext.Category where Category.id == @id first;
+        if (c == null) {
+            return null;
+        }
+        if (req.name != null) {
+            c.name = req.name;
+        }
+        if (req.description != null) {
+            c.description = req.description;
+        }
+        update c in AppDbContext.Category;
+        return c;
+    }
+
+    // Bumped every time a transaction is booked against the category, so
+    // listByUser can surface the most-used categories first.
+    function incrementUsage(id: int) {
+        let c = select Category from AppDbContext.Category where Category.id == @id first;
+        if (c == null) {
+            return;
+        }
+        c.usage_count = c.usage_count + 1;
+        update c in AppDbContext.Category;
+    }
+
+    function remove(id: int) {
+        delete from AppDbContext.Category where Category.id == @id;
+    }
+}

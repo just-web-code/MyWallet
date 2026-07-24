@@ -1,0 +1,10 @@
+class CreateWalletRequest {
+    name     string;
+    currency string;
+    balance  decimal;
+}
+
+class UpdateWalletRequest {
+    name     string;
+    currency string;
+}

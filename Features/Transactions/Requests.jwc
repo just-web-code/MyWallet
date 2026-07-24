@@ -1,0 +1,6 @@
+class CreateTransactionRequest {
+    category_id int;
+    amount      decimal;
+    is_income   bool;
+    description string;
+}
