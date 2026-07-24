@@ -1,7 +1,7 @@
 class CreateWalletRequest {
     name     string;
     currency string;
-    balance  decimal;
+    balance  int; // integer amount in so'm
 }
 
 class UpdateWalletRequest {

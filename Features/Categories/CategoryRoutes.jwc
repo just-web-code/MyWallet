@@ -56,6 +56,9 @@ route DELETE "/categories/{id}" use AuthMiddleware {
     if (c.user_id != userId) {
         return forbidden();
     }
+    if (CategoryService.transactionCount(id) > 0) {
+        return badRequest({ error: "category has transactions; delete them first" });
+    }
     CategoryService.remove(id);
     return noContent();
 }

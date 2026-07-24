@@ -14,7 +14,7 @@ entity Wallet of AppDbContext {
     id         int pk autoincrement;   // primary key, auto-increment
     user_id    int references User.id on delete cascade; // foreign key to User
     name       varchar(120);
-    balance    decimal(18, 2);
+    balance    int; // integer amount in so'm (JWC binds small ints as int4, not int8)
     currency   varchar(10);
     created_at datetime;
 }
@@ -32,7 +32,7 @@ entity Transaction of AppDbContext {
     id          int pk autoincrement;   // primary key, auto-increment
     wallet_id   int references Wallet.id on delete cascade; // foreign key to Wallet
     category_id int references Category.id; // foreign key to Category
-    amount      decimal(18, 2);
+    amount      int; // integer amount in so'm
     is_income   bool; // true for income, false for expense
     description varchar(255);
     created_at  datetime;

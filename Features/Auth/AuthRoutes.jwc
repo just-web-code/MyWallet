@@ -1,4 +1,4 @@
-route POST "/auth/register" {
+route POST "/auth/register" use RateLimit {
     validate body {
         email:    required, pattern(r"^[^@]+@[^@]+\.[^@]+$");
         password: required, minLength(8), maxLength(200);
@@ -14,7 +14,7 @@ route POST "/auth/register" {
     return created(json({ id: u.id, email: u.email, first_name: u.first_name, last_name: u.last_name }));
 }
 
-route POST "/auth/login" {
+route POST "/auth/login" use RateLimit {
     validate body {
         email:    required;
         password: required;

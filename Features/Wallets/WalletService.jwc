@@ -1,5 +1,5 @@
 dome WalletService {
-    function create(userId: int, name: string, currency: string, balance: decimal) {
+    function create(userId: int, name: string, currency: string, balance: int) {
         let w = new Wallet();
         w.user_id    = userId;
         w.name       = name;
@@ -38,7 +38,7 @@ dome WalletService {
     // Shift a wallet's balance by `delta` (negative for expenses). Called
     // inside the transaction that writes/removes a Transaction row so the
     // balance and the ledger never drift.
-    function adjustBalance(id: int, delta: decimal) {
+    function adjustBalance(id: int, delta: int) {
         let w = select Wallet from AppDbContext.Wallet where Wallet.id == @id first;
         if (w == null) {
             return null;

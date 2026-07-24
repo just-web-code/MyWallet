@@ -2,7 +2,7 @@ dome TransactionService {
     // Book a transaction and move the wallet balance in the SAME transaction so
     // the ledger and the running balance can never drift. Income adds, expense
     // subtracts. The category's usage counter is bumped too.
-    function create(userId: int, walletId: int, categoryId: int, amount: decimal, isIncome: bool, description: string) {
+    function create(userId: int, walletId: int, categoryId: int, amount: int, isIncome: bool, description: string) {
         let t = new Transaction();
         transaction {
             t.wallet_id   = walletId;

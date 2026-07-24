@@ -58,6 +58,13 @@ dome CategoryService {
         update c in AppDbContext.Category;
     }
 
+    // Transactions have no ON DELETE CASCADE to Category (deleting a category
+    // must not wipe financial history), so the controller checks this before
+    // deleting and refuses when the category is still referenced.
+    function transactionCount(id: int) {
+        return select count(*) from AppDbContext.Transaction where Transaction.category_id == @id;
+    }
+
     function remove(id: int) {
         delete from AppDbContext.Category where Category.id == @id;
     }
