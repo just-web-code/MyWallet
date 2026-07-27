@@ -1,0 +1,60 @@
+{
+  "common": {
+    "search": "Qidirish",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "delete": "O'chirish",
+    "edit": "Tahrirlash",
+    "create": "Yaratish",
+    "loading": "Yuklanmoqda...",
+    "no_results": "Natija yo'q",
+    "actions": "Amallar"
+  },
+  "nav": {
+    "dashboard": "Boshqaruv",
+    "wallets": "Hamyonlar",
+    "transactions": "Tranzaksiyalar",
+    "categories": "Kategoriyalar",
+    "settings": "Sozlamalar",
+    "profile": "Profil",
+    "logout": "Chiqish"
+  },
+  "login": {
+    "title": "Xush kelibsiz",
+    "subtitle": "Hisobingizga kiring",
+    "email": "Email",
+    "password": "Parol",
+    "forgot_password": "Parolni unutdingizmi?",
+    "submit": "Kirish",
+    "no_account": "Hisobingiz yo'qmi?",
+    "email_invalid": "To'g'ri email kiriting",
+    "password_required": "Parol kerak"
+  },
+  "register": {
+    "subtitle": "MyWallet hisobingizni yarating",
+    "first_name": "Ism",
+    "last_name": "Familiya",
+    "password_min": "Parol kamida 8 belgidan iborat bo'lsin",
+    "submit": "Ro'yxatdan o'tish",
+    "have_account": "Hisobingiz bormi?"
+  },
+  "forgot_password": {
+    "title": "Parolni tiklash",
+    "subtitle": "Hisobni tiklash haqida",
+    "unavailable": "API hozircha parolni tiklashni qo'llab-quvvatlamaydi. Administratorga murojaat qiling.",
+    "back_to_login": "Loginga qaytish"
+  },
+  "errors": {
+    "generic": "Nimadir xato ketdi",
+    "network": "Tarmoq xatosi. Qayta urinib ko'ring.",
+    "unauthorized": "Sizda ruxsat yo'q",
+    "not_found": "Topilmadi",
+    "validation": "Tekshiruvda xato"
+  },
+  "theme": {
+    "light": "Yorug'",
+    "dark": "Qora",
+    "system": "Tizim"
+  },
+  "language": "Til"
+}

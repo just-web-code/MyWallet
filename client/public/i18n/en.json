@@ -1,0 +1,60 @@
+{
+  "common": {
+    "search": "Search",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "loading": "Loading...",
+    "no_results": "No results",
+    "actions": "Actions"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "wallets": "Wallets",
+    "transactions": "Transactions",
+    "categories": "Categories",
+    "settings": "Settings",
+    "profile": "Profile",
+    "logout": "Logout"
+  },
+  "login": {
+    "title": "Welcome back",
+    "subtitle": "Sign in to your account",
+    "email": "Email",
+    "password": "Password",
+    "forgot_password": "Forgot password?",
+    "submit": "Sign in",
+    "no_account": "No account yet?",
+    "email_invalid": "Please enter a valid email",
+    "password_required": "Password is required"
+  },
+  "register": {
+    "subtitle": "Create your MyWallet account",
+    "first_name": "First name",
+    "last_name": "Last name",
+    "password_min": "Password must be at least 8 characters",
+    "submit": "Create account",
+    "have_account": "Already have an account?"
+  },
+  "forgot_password": {
+    "title": "Reset password",
+    "subtitle": "About recovering your account",
+    "unavailable": "Password reset is not supported by the API yet. Ask an administrator for help.",
+    "back_to_login": "Back to sign in"
+  },
+  "errors": {
+    "generic": "Something went wrong",
+    "network": "Network error. Please try again.",
+    "unauthorized": "You are not authorized",
+    "not_found": "Not found",
+    "validation": "Validation failed"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": "Language"
+}
