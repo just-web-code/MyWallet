@@ -4,6 +4,7 @@
 
 # jwc bundle output
 bin/
+.dist/
 
 # Rust toolchain output (only relevant if you check the compiler in)
 target/

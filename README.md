@@ -1,15 +1,25 @@
 # MyWallet
 
-A small personal-finance API written in **[JWC](https://jwc.1kb.uz)** (Just Web Code)
-on top of PostgreSQL. Users register, open wallets, categorise spending, record
-income/expense transactions (with atomic balance updates), and read a rollup of
-their finances.
+A small personal-finance app: an API written in **[JWC](https://jwc.1kb.uz)**
+(Just Web Code) on top of PostgreSQL, plus an Angular web client. Users register,
+open wallets, categorise spending, record income/expense transactions (with atomic
+balance updates), and read a rollup of their finances.
 
 ## Stack
+
+**Backend**
 
 - **JWC** — routes, `dome` services, entities, middleware, and the query layer
 - **PostgreSQL** — persistence, driven by JWC migrations
 - **JWT** auth + per-IP rate limiting on the public auth routes
+
+**Frontend** (`client/`)
+
+- **Angular 19** — standalone components, signals, lazy-loaded routes
+- **PrimeNG 19** + **Tailwind CSS** — UI kit and styling, dark/light theme
+- **TanStack Query** — server state, caching, invalidation
+- **ngx-translate** — English / O'zbek, persisted to `localStorage`
+- **Chart.js** — dashboard charts; **zod** — response validation
 
 ## Layout
 
@@ -27,6 +37,15 @@ Infrastructure/
 Shared/ErrorHandler.jwc        global JSON error envelope
 migrations/                    SQL migrations
 main.jwc                       setConnectionString() + serve()
+
+client/src/app/
+  core/                        models, token storage, auth guard + interceptor,
+                               one service per API area, theme / language / toast
+  features/                    auth, dashboard, wallets, categories,
+                               transactions, settings, profile, not-found
+  layout/                      shell: sidebar, topbar, footer
+  shared/                      page header, placeholder
+client/public/i18n/            en.json / uz.json
 ```
 
 ## Setup
@@ -57,6 +76,24 @@ main.jwc                       setConnectionString() + serve()
 
 Interactive API docs are served automatically at **`/docs`** (Swagger UI) and
 **`/openapi.json`** — no code required.
+
+## Client
+
+With the API running on port 7889:
+
+```
+cd client
+npm install
+npm start          # http://localhost:4200
+```
+
+`proxy.conf.json` forwards `/api/*` to `http://127.0.0.1:7889` and strips the
+`/api` prefix, so dev needs no CORS setup. `client/src/environments/environment.ts`
+holds `apiUrl` (`/api` by default) — point it at the public API origin for a real
+deployment. `npm run build` emits to `client/dist/`.
+
+The JWT is kept in `localStorage`; an HTTP interceptor attaches it and `authGuard`
+protects every route outside `/login`, `/register` and `/forgot-password`.
 
 ## Endpoints
 
