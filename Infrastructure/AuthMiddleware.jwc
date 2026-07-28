@@ -3,7 +3,6 @@ middleware AuthMiddleware {
     if (raw == null) {
         return unauthorized();
     }
-
     try {
         let claims = jwt_verify(raw, env("JWT_SECRET"));
         setContext("userId", claims.sub);

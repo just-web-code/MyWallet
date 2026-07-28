@@ -6,10 +6,8 @@ middleware RateLimit {
     // client_ip() returns null when no proxy header (x-forwarded-for) is
     // present — e.g. direct connections in dev. Fall back to a shared bucket
     // so the limit still applies.
-    let ip = client_ip();
-    if (ip == null or ip == "") {
-        ip = "unknown";
-    }
+    let raw_ip = client_ip() ?? "";
+    let ip = raw_ip != "" ? raw_ip : "unknown";
     let key = "rl:" + ip;
     let count = cache_get(key);
     if (count == null) {
@@ -17,7 +15,9 @@ middleware RateLimit {
     } else {
         let n = int(count) + 1;
         if (n >= 60) {
-            return statusCode(429, { error: "rate limited" });
+            // statusCode() with a bare string replies text/plain, which would
+            // fall outside the JSON error envelope every other route returns.
+            return statusCode(429, json({ error: "rate limited", status: 429, code: "rate_limited" }));
         }
         cache_set(key, "" + n, 60);
     }

@@ -61,6 +61,8 @@ client/public/i18n/            en.json / uz.json
    | `PG_HOST` / `PG_PORT` / `PG_USER` / `PG_PASSWORD` / `PG_DATABASE` | Postgres connection |
    | `JWT_SECRET` | secret used to sign / verify JWTs |
    | `PORT` | HTTP port (default 8080) |
+   | `JWC_CORS_ORIGINS` (+ `_METHODS` / `_HEADERS` / `_EXPOSE_HEADERS` / `_CREDENTIALS` / `_MAX_AGE`) | CORS, **off** unless set — lets the client call the API cross-origin without a reverse proxy |
+   | `JWC_DEBUG_ERRORS` | local only: include internal detail in 500 responses |
 
 2. Apply the migrations:
 
@@ -87,8 +89,10 @@ npm install
 npm start          # http://localhost:4200
 ```
 
-`proxy.conf.json` forwards `/api/*` to `http://127.0.0.1:7889` and strips the
-`/api` prefix, so dev needs no CORS setup. `client/src/environments/environment.ts`
+`proxy.conf.json` forwards `/api/*` to `http://localhost:7889` and strips the
+`/api` prefix, so dev needs no CORS setup. The target must stay `localhost`, not
+`127.0.0.1`: the server binds `[::]` only, so an IPv4 literal is unreachable and
+the dev proxy answers 500. `client/src/environments/environment.ts`
 holds `apiUrl` (`/api` by default) — point it at the public API origin for a real
 deployment. `npm run build` emits to `client/dist/`.
 
@@ -124,8 +128,26 @@ curl -X POST localhost:7889/wallets -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' -d '{"name":"Cash","currency":"UZS","balance":100000}'
 ```
 
+## Errors
+
+Every failure comes back in one envelope — branch on `code`, never on the prose:
+
+```json
+{ "error": "...", "status": 400, "code": "validation_failed", "details": { "email": ["required"] } }
+```
+
+`code` is one of `validation_failed`, `not_found`, `method_not_allowed`, `timeout`,
+`internal_error`. Per-field validation messages live under `details`. 500s never
+carry internal detail unless `JWC_DEBUG_ERRORS=1` is set. On the client,
+`apiError()` / `validationMessages()` in `core/services/api.service.ts` unwrap it,
+and every `ApiService` call rejects with an `ApiRequestError` that keeps
+`code` / `details` alongside `message`.
+
 ## Notes
 
+- **Requires jwc ≥ 0.8.2.** Entity `index` / `unique(a, b)`, `??`, ternaries,
+  `+=`, aggregate projections with `group by`, and the unified error envelope
+  are all post-0.6 features.
 - **Money is stored as an integer** (`int`, whole so'm). JWC binds small integers
   as `int4`, so the money columns are `int` rather than `bigint` / `decimal` —
   amounts up to ~2.1B per row.
@@ -134,3 +156,8 @@ curl -X POST localhost:7889/wallets -H "Authorization: Bearer $TOKEN" \
   never drift.
 - **Rate limit** is an in-process fixed window (single replica). Behind multiple
   pods, back it with a shared cache.
+- **Every FK column is indexed** and category names are enforced unique per user
+  by the DB (`unique(user_id, name)`) rather than by a select-then-insert check,
+  which was a TOCTOU race under concurrent requests.
+- **`/stats` aggregates in Postgres** (`count` / `sum` + `group by`); the ledger
+  is never streamed into the app just to be summed.

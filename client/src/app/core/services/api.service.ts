@@ -48,25 +48,88 @@ export class ApiService {
     try {
       return await firstValueFrom(source);
     } catch (e) {
-      throw new Error(apiErrorMessage(e));
+      throw new ApiRequestError(apiError(e));
     }
   }
 }
 
-/** Unwraps the JWC error envelope (`{ error: "..." }`) into a plain message. */
+/**
+ * Thrown by every ApiService call. `.message` stays the human-readable string
+ * callers already display; `.code` / `.details` are there when a caller wants
+ * to branch on the failure instead of just showing it.
+ */
+export class ApiRequestError extends Error {
+  readonly status: number;
+  readonly code: ApiErrorCode;
+  readonly details?: Record<string, string>;
+
+  constructor(envelope: ApiError) {
+    super(envelope.error);
+    this.name = 'ApiRequestError';
+    this.status = envelope.status;
+    this.code = envelope.code;
+    this.details = envelope.details;
+  }
+}
+
+/**
+ * The single error envelope every JWC endpoint returns since 0.7.0. `code` is
+ * the stable contract to branch on; `details` carries per-field validation
+ * messages (it was called `errors` before 0.7.0).
+ */
+export interface ApiError {
+  error: string;
+  status: number;
+  code: ApiErrorCode;
+  /** One rule per field, e.g. `{ password: "minLength(8)" }`. */
+  details?: Record<string, string>;
+}
+
+export type ApiErrorCode =
+  | 'validation_failed'
+  | 'not_found'
+  | 'method_not_allowed'
+  | 'timeout'
+  | 'internal_error'
+  /** Not a runtime code — returned by RateLimitMiddleware, not the runtime. */
+  | 'rate_limited';
+
+/** Unwraps the JWC error envelope into a plain message. */
 export function apiErrorMessage(e: unknown): string {
+  return apiError(e).error;
+}
+
+/**
+ * Normalises anything thrown by HttpClient into the envelope shape. A single
+ * branch is enough now that the server no longer returns three different bodies
+ * — the fallbacks below only cover errors that never reached the API (status 0)
+ * or a non-JWC proxy in front of it.
+ */
+export function apiError(e: unknown): ApiError {
   if (e instanceof HttpErrorResponse) {
-    const body = e.error as { error?: string; message?: string } | string | null;
-    if (typeof body === 'string' && body) {
-      return body;
-    }
-    if (body && typeof body === 'object' && (body.error || body.message)) {
-      return (body.error ?? body.message) as string;
+    const body = e.error as Partial<ApiError> | null;
+    if (body && typeof body === 'object' && typeof body.error === 'string') {
+      return {
+        error: body.error,
+        status: body.status ?? e.status,
+        code: body.code ?? 'internal_error',
+        details: body.details,
+      };
     }
     if (e.status === 0) {
-      return 'API unreachable — is the JWC server running?';
+      return { error: 'API unreachable — is the JWC server running?', status: 0, code: 'internal_error' };
     }
-    return `Request failed (${e.status})`;
+    return { error: `Request failed (${e.status})`, status: e.status, code: 'internal_error' };
   }
-  return e instanceof Error ? e.message : 'Unexpected error';
+  const message = e instanceof Error ? e.message : 'Unexpected error';
+  return { error: message, status: 0, code: 'internal_error' };
+}
+
+/** Flattens `details` into one line per failed field, for form-level display. */
+export function validationMessages(e: unknown): string[] {
+  const err = apiError(e);
+  if (err.code !== 'validation_failed' || !err.details) {
+    return [];
+  }
+  return Object.entries(err.details).map(([field, rule]) => `${field}: ${rule}`);
 }

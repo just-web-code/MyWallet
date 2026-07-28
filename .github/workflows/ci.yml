@@ -16,7 +16,7 @@ jobs:
     name: API (JWC)
     runs-on: ubuntu-latest
     env:
-      JWC_VERSION: 0.6.3
+      JWC_VERSION: 0.8.2
     steps:
       - uses: actions/checkout@v5
 

@@ -10,12 +10,9 @@ route POST "/categories" use AuthMiddleware {
     let userId = context("userId");
     let req = body();
     if (CategoryService.findByName(userId, req.name) != null) {
-        return badRequest({ error: "category name already exists" });
+        return badRequest("category name already exists");
     }
-    let desc = req.description;
-    if (desc == null) {
-        desc = "";
-    }
+    let desc = req.description ?? "";
     let c = CategoryService.create(userId, req.name, desc);
     return created(json(c));
 }
@@ -57,7 +54,7 @@ route DELETE "/categories/{id}" use AuthMiddleware {
         return forbidden();
     }
     if (CategoryService.transactionCount(id) > 0) {
-        return badRequest({ error: "category has transactions; delete them first" });
+        return badRequest("category has transactions; delete them first");
     }
     CategoryService.remove(id);
     return noContent();

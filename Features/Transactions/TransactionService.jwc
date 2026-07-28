@@ -14,10 +14,7 @@ dome TransactionService {
             t.created_at  = now();
             insert t into AppDbContext.Transaction;
 
-            let delta = amount;
-            if (isIncome == false) {
-                delta = 0 - amount;
-            }
+            let delta = isIncome ? amount : 0 - amount;
             WalletService.adjustBalance(walletId, delta);
             CategoryService.incrementUsage(categoryId);
         }
@@ -42,10 +39,7 @@ dome TransactionService {
     function remove(t) {
         let tid = t.id;
         transaction {
-            let delta = t.amount;
-            if (t.is_income == true) {
-                delta = 0 - t.amount;
-            }
+            let delta = t.is_income ? 0 - t.amount : t.amount;
             WalletService.adjustBalance(t.wallet_id, delta);
             delete from AppDbContext.Transaction where Transaction.id == @tid;
         }

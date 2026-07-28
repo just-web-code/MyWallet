@@ -20,16 +20,11 @@ dome CategoryService {
         return select Category from AppDbContext.Category where Category.id == @id first;
     }
 
-    // Names are unique per user (not globally), so scan this user's categories
-    // for a matching name.
+    // Names are unique per user (not globally) — enforced by unique(user_id, name)
+    // on the entity; this is the friendly pre-check before the DB rejects it.
     function findByName(userId: int, name: string): Category? {
-        let cats = select Category from AppDbContext.Category where Category.user_id == @userId;
-        for c in cats {
-            if (c.name == name) {
-                return c;
-            }
-        }
-        return null;
+        return select Category from AppDbContext.Category
+            where Category.user_id == @userId and Category.name == @name first;
     }
 
     function update(id: int, req: UpdateCategoryRequest) {
@@ -54,7 +49,7 @@ dome CategoryService {
         if (c == null) {
             return;
         }
-        c.usage_count = c.usage_count + 1;
+        c.usage_count += 1;
         update c in AppDbContext.Category;
     }
 

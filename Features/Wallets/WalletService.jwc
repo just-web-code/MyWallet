@@ -43,7 +43,7 @@ dome WalletService {
         if (w == null) {
             return null;
         }
-        w.balance = w.balance + delta;
+        w.balance += delta;
         update w in AppDbContext.Wallet;
         return w;
     }

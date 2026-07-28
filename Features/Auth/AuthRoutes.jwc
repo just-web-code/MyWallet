@@ -1,14 +1,14 @@
 route POST "/auth/register" use RateLimit {
     validate body {
-        email:    required, pattern(r"^[^@]+@[^@]+\.[^@]+$");
+        email: required, pattern("^[^@]+@[^@]+\\.[^@]+$");
         password: required, minLength(8), maxLength(200);
         first_name: required, minLength(1), maxLength(120);
-        last_name:  required, minLength(1), maxLength(120);
+        last_name: required, minLength(1), maxLength(120);
     }
     let req = body();
     let existing = AuthService.findByEmail(req.email);
     if (existing != null) {
-        return badRequest({ error: "email already registered" });
+        return badRequest("email already registered");
     }
     let u = AuthService.register(req);
     return created(json({ id: u.id, email: u.email, first_name: u.first_name, last_name: u.last_name }));
@@ -16,7 +16,7 @@ route POST "/auth/register" use RateLimit {
 
 route POST "/auth/login" use RateLimit {
     validate body {
-        email:    required;
+        email: required;
         password: required;
     }
     let req = body();

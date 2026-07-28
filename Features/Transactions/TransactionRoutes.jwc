@@ -8,22 +8,16 @@ route GET "/wallets/{wid}/transactions" use AuthMiddleware {
     if (w.user_id != userId) {
         return forbidden();
     }
-    let limit = 20;
     let limitStr = query_param("limit");
-    if (limitStr != "") {
-        limit = int(limitStr);
-    }
-    let offset = 0;
+    let limit = (limitStr != "") ? int(limitStr) : 20;
     let offsetStr = query_param("offset");
-    if (offsetStr != "") {
-        offset = int(offsetStr);
-    }
+    let offset = (offsetStr != "") ? int(offsetStr) : 0;
     return json(TransactionService.listByWallet(wid, limit, offset));
 }
 
 route POST "/wallets/{wid}/transactions" use AuthMiddleware {
     validate body {
-        amount:      required;
+        amount: required;
         category_id: required;
     }
     let userId = context("userId");
@@ -38,19 +32,13 @@ route POST "/wallets/{wid}/transactions" use AuthMiddleware {
     let req = body();
     let cat = CategoryService.getById(req.category_id);
     if (cat == null) {
-        return badRequest({ error: "invalid category" });
+        return badRequest("invalid category");
     }
     if (cat.user_id != userId) {
         return forbidden();
     }
-    let isIncome = req.is_income;
-    if (isIncome == null) {
-        isIncome = false;
-    }
-    let desc = req.description;
-    if (desc == null) {
-        desc = "";
-    }
+    let isIncome = req.is_income ?? false;
+    let desc = req.description ?? "";
     let t = TransactionService.create(userId, wid, req.category_id, req.amount, isIncome, desc);
     return created(json(t));
 }

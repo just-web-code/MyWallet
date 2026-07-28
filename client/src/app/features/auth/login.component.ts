@@ -6,6 +6,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { TranslateModule } from '@ngx-translate/core';
 
+import { validationMessages } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 
@@ -104,7 +105,8 @@ export class LoginComponent {
       await this.auth.login(email, password);
       this.router.navigateByUrl('/');
     } catch (e) {
-      this.toast.error((e as Error).message);
+      const fields = validationMessages(e);
+      this.toast.error(fields.length > 0 ? fields.join(' · ') : (e as Error).message);
     } finally {
       this.loading.set(false);
     }

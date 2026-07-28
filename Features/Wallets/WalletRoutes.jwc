@@ -5,15 +5,12 @@ route GET "/wallets" use AuthMiddleware {
 
 route POST "/wallets" use AuthMiddleware {
     validate body {
-        name:     required, minLength(1), maxLength(120);
+        name: required, minLength(1), maxLength(120);
         currency: required, minLength(1), maxLength(10);
     }
     let userId = context("userId");
     let req = body();
-    let balance = req.balance;
-    if (balance == null) {
-        balance = 0;
-    }
+    let balance = req.balance ?? 0;
     let w = WalletService.create(userId, req.name, req.currency, balance);
     return created(json(w));
 }
