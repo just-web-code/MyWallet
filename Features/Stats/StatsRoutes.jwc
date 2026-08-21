@@ -1,4 +1,0 @@
-route GET "/stats" use AuthMiddleware {
-    let userId = context("userId");
-    return json(StatsService.summary(userId));
-}

@@ -1,0 +1,9 @@
+{
+  "name": "mywallet",
+  "type": "app",
+  "version": "2.0.0",
+  "entry": "src/app.jwc",
+  "dependencies": {
+    "redis": "^0.2.0"
+  }
+}

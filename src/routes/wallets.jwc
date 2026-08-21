@@ -1,0 +1,39 @@
+namespace routes.wallets;
+
+import dto.wallets;
+import middleware.auth;
+import middleware.ratelimit;
+import services.wallets;
+
+routes "/wallets" use RequireAuth, RateLimit {
+    route GET "" {
+        return json(WalletService.list(context.account_id));
+    }
+
+    route POST "" {
+        let req = request.body() as CreateWalletRequest;
+        let w = WalletService.create(context.account_id, $req);
+
+        return created(json($w)) with { "Location": "/wallets/" + string.of($w.id) };
+    }
+}
+
+routes "/wallets/{id: int}" use RequireAuth, RateLimit {
+    route GET "" {
+        return json(WalletService.owned(@id, context.account_id));
+    }
+
+    route PATCH "" {
+        WalletService.owned(@id, context.account_id);
+        let req = request.body() as UpdateWalletRequest;
+
+        return json(WalletService.update(@id, $req));
+    }
+
+    route DELETE "" {
+        WalletService.owned(@id, context.account_id);
+        WalletService.remove(@id);
+
+        return noContent();
+    }
+}

@@ -1,0 +1,11 @@
+namespace dto.transactions;
+
+class CreateTransactionRequest {
+    category_id int required;
+    --- Whole so'm, always positive. The direction is `is_income`, not the
+    --- sign: a negative "income" would corrupt the balance in a way no
+    --- constraint would catch.
+    amount      int required, min(1);
+    is_income   boolean?;
+    description varchar(255)?;
+}

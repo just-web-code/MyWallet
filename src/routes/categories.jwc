@@ -1,0 +1,39 @@
+namespace routes.categories;
+
+import dto.categories;
+import middleware.auth;
+import middleware.ratelimit;
+import services.categories;
+
+routes "/categories" use RequireAuth, RateLimit {
+    route GET "" {
+        return json(CategoryService.list(context.account_id));
+    }
+
+    route POST "" {
+        let req = request.body() as CreateCategoryRequest;
+        let c = CategoryService.create(context.account_id, $req);
+
+        return created(json($c)) with { "Location": "/categories/" + string.of($c.id) };
+    }
+}
+
+routes "/categories/{id: int}" use RequireAuth, RateLimit {
+    route GET "" {
+        return json(CategoryService.owned(@id, context.account_id));
+    }
+
+    route PATCH "" {
+        CategoryService.owned(@id, context.account_id);
+        let req = request.body() as UpdateCategoryRequest;
+
+        return json(CategoryService.update(@id, $req));
+    }
+
+    route DELETE "" {
+        CategoryService.owned(@id, context.account_id);
+        CategoryService.remove(@id);
+
+        return noContent();
+    }
+}

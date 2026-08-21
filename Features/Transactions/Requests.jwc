@@ -1,6 +1,0 @@
-class CreateTransactionRequest {
-    category_id int;
-    amount      int; // integer amount in so'm
-    is_income   bool;
-    description string;
-}

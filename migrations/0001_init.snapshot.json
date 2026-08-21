@@ -1,0 +1,374 @@
+{
+  "format": 1,
+  "scheme": "v1",
+  "schemas": [
+    {
+      "name": "public",
+      "declared": "public"
+    }
+  ],
+  "tables": [
+    {
+      "schema": "public",
+      "name": "category",
+      "declared": "Categories",
+      "columns": [
+        {
+          "name": "id",
+          "declared": "id",
+          "ty": "integer",
+          "nullable": false,
+          "identity": true
+        },
+        {
+          "name": "name",
+          "declared": "name",
+          "ty": "varchar(100)",
+          "nullable": false
+        },
+        {
+          "name": "description",
+          "declared": "description",
+          "ty": "varchar(255)",
+          "nullable": false,
+          "default": "''"
+        },
+        {
+          "name": "usage_count",
+          "declared": "usage_count",
+          "ty": "integer",
+          "nullable": false,
+          "default": "0",
+          "comment": "Bumped on every transaction booked against it, so the list can put\nthe most-used first without a join."
+        },
+        {
+          "name": "user_id",
+          "declared": "user_id",
+          "ty": "integer",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "declared": "created_at",
+          "ty": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "primary_key": {
+        "name": "pk_category",
+        "columns": [
+          "id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "uq_category__user_id_name",
+          "columns": [
+            "user_id",
+            "name"
+          ]
+        }
+      ],
+      "foreign_keys": [
+        {
+          "name": "fk_category__user_id",
+          "columns": [
+            "user_id"
+          ],
+          "target_schema": "public",
+          "target_table": "user",
+          "target_columns": [
+            "id"
+          ],
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_category__user_id_usage_count",
+          "columns": [
+            {
+              "name": "user_id"
+            },
+            {
+              "name": "usage_count"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "name": "transaction",
+      "declared": "Transactions",
+      "columns": [
+        {
+          "name": "id",
+          "declared": "id",
+          "ty": "integer",
+          "nullable": false,
+          "identity": true
+        },
+        {
+          "name": "wallet_id",
+          "declared": "wallet_id",
+          "ty": "integer",
+          "nullable": false
+        },
+        {
+          "name": "category_id",
+          "declared": "category_id",
+          "ty": "integer",
+          "nullable": false,
+          "comment": "No `on delete cascade`: deleting a category must not erase financial\nhistory. The route refuses instead, with `CategoryInUse`."
+        },
+        {
+          "name": "amount",
+          "declared": "amount",
+          "ty": "integer",
+          "nullable": false
+        },
+        {
+          "name": "is_income",
+          "declared": "is_income",
+          "ty": "boolean",
+          "nullable": false
+        },
+        {
+          "name": "description",
+          "declared": "description",
+          "ty": "varchar(255)",
+          "nullable": false,
+          "default": "''"
+        },
+        {
+          "name": "user_id",
+          "declared": "user_id",
+          "ty": "integer",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "declared": "created_at",
+          "ty": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "primary_key": {
+        "name": "pk_transaction",
+        "columns": [
+          "id"
+        ]
+      },
+      "foreign_keys": [
+        {
+          "name": "fk_transaction__wallet_id",
+          "columns": [
+            "wallet_id"
+          ],
+          "target_schema": "public",
+          "target_table": "wallet",
+          "target_columns": [
+            "id"
+          ],
+          "on_delete": "CASCADE"
+        },
+        {
+          "name": "fk_transaction__category_id",
+          "columns": [
+            "category_id"
+          ],
+          "target_schema": "public",
+          "target_table": "category",
+          "target_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "fk_transaction__user_id",
+          "columns": [
+            "user_id"
+          ],
+          "target_schema": "public",
+          "target_table": "user",
+          "target_columns": [
+            "id"
+          ],
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_transaction__wallet_id_created_at",
+          "columns": [
+            {
+              "name": "wallet_id"
+            },
+            {
+              "name": "created_at"
+            }
+          ]
+        },
+        {
+          "name": "ix_transaction__user_id",
+          "columns": [
+            {
+              "name": "user_id"
+            }
+          ]
+        },
+        {
+          "name": "ix_transaction__category_id",
+          "columns": [
+            {
+              "name": "category_id"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "name": "user",
+      "declared": "Users",
+      "columns": [
+        {
+          "name": "id",
+          "declared": "id",
+          "ty": "integer",
+          "nullable": false,
+          "identity": true
+        },
+        {
+          "name": "first_name",
+          "declared": "first_name",
+          "ty": "varchar(120)",
+          "nullable": false
+        },
+        {
+          "name": "last_name",
+          "declared": "last_name",
+          "ty": "varchar(120)",
+          "nullable": false
+        },
+        {
+          "name": "email",
+          "declared": "email",
+          "ty": "varchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "password_hash",
+          "declared": "password_hash",
+          "ty": "varchar(255)",
+          "nullable": false,
+          "comment": "Argon2id. Never leaves the database (schema.md §3.1)."
+        },
+        {
+          "name": "created_at",
+          "declared": "created_at",
+          "ty": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "primary_key": {
+        "name": "pk_user",
+        "columns": [
+          "id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "uq_user__email",
+          "columns": [
+            "email"
+          ]
+        }
+      ],
+      "comment": "One account. Email is the login handle."
+    },
+    {
+      "schema": "public",
+      "name": "wallet",
+      "declared": "Wallets",
+      "columns": [
+        {
+          "name": "id",
+          "declared": "id",
+          "ty": "integer",
+          "nullable": false,
+          "identity": true
+        },
+        {
+          "name": "user_id",
+          "declared": "user_id",
+          "ty": "integer",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "declared": "name",
+          "ty": "varchar(120)",
+          "nullable": false
+        },
+        {
+          "name": "balance",
+          "declared": "balance",
+          "ty": "integer",
+          "nullable": false,
+          "default": "0",
+          "comment": "Whole so'm. An integer because the currency has no minor unit in\npractice, and because a float has no business here."
+        },
+        {
+          "name": "currency",
+          "declared": "currency",
+          "ty": "varchar(10)",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "declared": "created_at",
+          "ty": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "primary_key": {
+        "name": "pk_wallet",
+        "columns": [
+          "id"
+        ]
+      },
+      "foreign_keys": [
+        {
+          "name": "fk_wallet__user_id",
+          "columns": [
+            "user_id"
+          ],
+          "target_schema": "public",
+          "target_table": "user",
+          "target_columns": [
+            "id"
+          ],
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_wallet__user_id_created_at",
+          "columns": [
+            {
+              "name": "user_id"
+            },
+            {
+              "name": "created_at"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+namespace dto.auth;
+
+class RegisterRequest {
+    email      varchar(255) required, pattern(r"^[^@]+@[^@]+\.[^@]+$");
+    password   varchar(200) required, minLength(8);
+    first_name varchar(120) required, minLength(1);
+    last_name  varchar(120) required, minLength(1);
+}
+
+class LoginRequest {
+    email    varchar(255) required;
+    password varchar(200) required;
+}
+
+--- The identity a credential attempt names, and nothing else. A class is a
+--- whitelist (types.md §4), so this validates the body of both `register`
+--- and `login` — the rate limiter needs the email and has no business
+--- seeing the password.
+class Identified {
+    email varchar(255) required;
+}

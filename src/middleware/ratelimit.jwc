@@ -1,0 +1,43 @@
+namespace middleware.ratelimit;
+
+import dto.auth;
+import redis;
+
+--- 60 requests per rolling 60s window, keyed on the client address.
+---
+--- 0.9.x hand-rolled this over an in-process cache: read, add one, write
+--- back. Two concurrent requests could both read the same count and both
+--- write count+1, and the window was per-process, so N replicas meant an
+--- effective limit of 60xN. `redis.rate_limit` is INCR + EXPIRE in one
+--- script, and it is shared.
+middleware RateLimit {
+    let ip = request.client_ip();
+    let allowed = redis.rate_limit("rl:" + string.of($ip), 60, 60);
+
+    if (!$allowed) {
+        throw TooManyRequests("juda ko'p so'rov");
+    }
+}
+
+--- Credential endpoints, keyed on **both** the source and the account. One
+--- address spraying many accounts is stopped by the first bucket; many
+--- addresses targeting one account by the second. Keying on either alone
+--- leaves the other attack untouched.
+---
+--- The email is hashed into the key: a Redis key space that reads
+--- `rl:auth:id:…:someone@example.com` tells anyone who can list keys which
+--- accounts exist.
+middleware StrictRateLimit {
+    let ip = request.client_ip();
+    let route = request.route();
+    let who = request.body() as Identified;
+
+    -- Both are evaluated before either is read. Short-circuiting would let a
+    -- caller learn which bucket tripped from how long the answer took.
+    let by_ip = redis.rate_limit("rl:auth:ip:" + $route + ":" + string.of($ip), 20, 300);
+    let by_identity = redis.rate_limit("rl:auth:id:" + $route + ":" + hash.sha256($who.email), 5, 300);
+
+    if (!$by_ip or !$by_identity) {
+        throw TooManyRequests("juda ko'p urinish, keyinroq qayting");
+    }
+}

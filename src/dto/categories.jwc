@@ -1,0 +1,11 @@
+namespace dto.categories;
+
+class CreateCategoryRequest {
+    name        varchar(100) required, minLength(1);
+    description varchar(255)?;
+}
+
+class UpdateCategoryRequest {
+    name        varchar(100)? minLength(1);
+    description varchar(255)?;
+}

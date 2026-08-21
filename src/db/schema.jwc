@@ -1,0 +1,69 @@
+namespace db.schema;
+
+import app;
+
+--- One account. Email is the login handle.
+table Users of App.public as "user" {
+    id            int primary key identity;
+    first_name    varchar(120);
+    last_name     varchar(120);
+    email         varchar(255) unique : "bu email allaqachon ro'yxatdan o'tgan";
+    --- Argon2id. Never leaves the database (schema.md §3.1).
+    password_hash varchar(255) private;
+    created_at    timestamptz default now();
+}
+
+table Wallets of App.public as "wallet" {
+    id         int primary key identity;
+    user_id    int;
+    name       varchar(120);
+    --- Whole so'm. An integer because the currency has no minor unit in
+    --- practice, and because a float has no business here.
+    balance    int default 0;
+    currency   varchar(10);
+    created_at timestamptz default now();
+
+    foreign key (user_id) references App.public.Users (id) on delete cascade;
+
+    index on (user_id, created_at);
+}
+
+table Categories of App.public as "category" {
+    id          int primary key identity;
+    name        varchar(100);
+    description varchar(255) default "";
+    --- Bumped on every transaction booked against it, so the list can put
+    --- the most-used first without a join.
+    usage_count int default 0;
+    user_id     int;
+    created_at  timestamptz default now();
+
+    foreign key (user_id) references App.public.Users (id) on delete cascade;
+
+    --- Per user, not globally. The database enforces it, so there is no
+    --- select-then-insert race to lose.
+    unique (user_id, name) : "bunday nomli kategoriya allaqachon bor";
+
+    index on (user_id, usage_count);
+}
+
+table Transactions of App.public as "transaction" {
+    id          int primary key identity;
+    wallet_id   int;
+    --- No `on delete cascade`: deleting a category must not erase financial
+    --- history. The route refuses instead, with `CategoryInUse`.
+    category_id int;
+    amount      int;
+    is_income   boolean;
+    description varchar(255) default "";
+    user_id     int;
+    created_at  timestamptz default now();
+
+    foreign key (wallet_id) references App.public.Wallets (id) on delete cascade;
+    foreign key (category_id) references App.public.Categories (id);
+    foreign key (user_id) references App.public.Users (id) on delete cascade;
+
+    index on (wallet_id, created_at);
+    index on (user_id);
+    index on (category_id);
+}

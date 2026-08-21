@@ -1,0 +1,41 @@
+namespace services.auth;
+
+import app;
+import db.schema;
+import dto.auth;
+
+service AuthService {
+    --- Register, or refuse because the email is taken.
+    ---
+    --- The refusal comes from the unique constraint, not from a
+    --- select-then-insert: the 0.9.x version looked the email up first and
+    --- then inserted, which two concurrent registrations both pass.
+    function register(req: RegisterRequest) {
+        return insert into App.public.Users {
+            email         = $req.email,
+            password_hash = hash.password($req.password),
+            first_name    = $req.first_name,
+            last_name     = $req.last_name
+        } as { id, email, first_name, last_name, created_at };
+    }
+
+    --- One lookup, one verify, one error for both halves.
+    ---
+    --- `Unauthorized` whether the email is unknown or the password is
+    --- wrong: answering differently turns the endpoint into an account
+    --- enumerator.
+    function login(req: LoginRequest) -> text {
+        let account = select U from App.public.Users
+            where email == $req.email
+            as { id, password_hash }
+            first or throw Unauthorized("email yoki parol xato");
+
+        let ok = hash.verify($req.password, $account.password_hash);
+        if (!$ok) {
+            throw Unauthorized("email yoki parol xato");
+        }
+
+        let secret = env("JWT_SECRET") or throw Unauthorized("server sozlanmagan");
+        return jwt.sign({ sub: string.of($account.id) }, $secret, 1440);
+    }
+}

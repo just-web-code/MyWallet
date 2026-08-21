@@ -1,0 +1,11 @@
+namespace routes.stats;
+
+import middleware.auth;
+import middleware.ratelimit;
+import services.stats;
+
+routes "/stats" use RequireAuth, RateLimit {
+    route GET "" {
+        return json(StatsService.summary(context.account_id));
+    }
+}

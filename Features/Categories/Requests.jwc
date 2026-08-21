@@ -1,9 +1,0 @@
-class CreateCategoryRequest {
-    name string;
-    description string;
-}
-
-class UpdateCategoryRequest {
-    name string;
-    description string;
-}

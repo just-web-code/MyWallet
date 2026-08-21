@@ -1,0 +1,14 @@
+namespace dto.wallets;
+
+class CreateWalletRequest {
+    name     varchar(120) required, minLength(1);
+    currency varchar(10) required, minLength(1);
+    --- Whole so'm. Optional: a new wallet starts empty unless told otherwise.
+    balance  int?;
+}
+
+--- Every field optional: PATCH sends only what changes.
+class UpdateWalletRequest {
+    name     varchar(120)? minLength(1);
+    currency varchar(10)? minLength(1);
+}

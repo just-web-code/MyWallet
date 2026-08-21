@@ -1,0 +1,46 @@
+namespace routes.transactions;
+
+import dto.transactions;
+import middleware.auth;
+import middleware.ratelimit;
+import services.categories;
+import services.transactions;
+import services.wallets;
+
+routes "/wallets/{id: int}/transactions" use RequireAuth, RateLimit {
+    route GET "" {
+        WalletService.owned(@id, context.account_id);
+
+        -- Keyset, so the client hands back the previous page's cursor
+        -- rather than an offset. `size` is clamped to `max_page_size`.
+        let after = request.query("after");
+        let size = int(request.query("size") ?? "20");
+
+        return json(TransactionService.list(@id, $after, $size));
+    }
+
+    route POST "" {
+        WalletService.owned(@id, context.account_id);
+        let req = request.body() as CreateTransactionRequest;
+
+        -- The category has to be the caller's own, or a transaction could be
+        -- filed under someone else's books.
+        CategoryService.owned($req.category_id, context.account_id);
+
+        let t = TransactionService.create(context.account_id, @id, $req);
+        return created(json($t));
+    }
+}
+
+routes "/transactions/{id: int}" use RequireAuth, RateLimit {
+    route GET "" {
+        return json(TransactionService.owned(@id, context.account_id));
+    }
+
+    route DELETE "" {
+        let t = TransactionService.owned(@id, context.account_id);
+        TransactionService.remove(@id, $t.wallet_id, $t.amount, $t.is_income);
+
+        return noContent();
+    }
+}
