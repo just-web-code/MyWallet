@@ -1,40 +1,40 @@
 namespace app;
 
---- MyWallet — a personal finance API.
----
---- Auth (register/login + JWT), wallets, categories, transactions with
---- atomic balance updates, and a per-user rollup.
+/// MyWallet — a personal finance API.
+///
+/// Auth (register/login + JWT), wallets, categories, transactions with
+/// atomic balance updates, and a per-user rollup.
 
 database App : Postgres {
     init() {
-        pool_size         = int(env("DB_POOL") ?? "10");
+        pool_size         = 10;
         statement_timeout = "10s";
         connect_timeout   = "5s";
     }
 }
 
---- `public`, so the tables keep the physical names the 0.9.x deployment
---- created. A schema rename would strand every existing row.
+/// `public`, so the tables keep the physical names the 0.9.x deployment
+/// created. A schema rename would strand every existing row.
 schema public of App;
 
 server {
     max_body_bytes  = 32768;
     request_timeout = "15s";
     max_page_size   = 100;
-    --- Required by any `page` query (config.md §3): the cursor is a
-    --- client-supplied predicate and is signed so a caller cannot hand back
-    --- an ordering tuple the query's own `where` was meant to exclude.
+    /// Required by any `page` query (config.md §3): the cursor is a
+    /// client-supplied predicate and is signed so a caller cannot hand back
+    /// an ordering tuple the query's own `where` was meant to exclude.
     cursor_secret   = env("CURSOR_SECRET");
     trusted_proxies = ["10.0.0.0/8", "172.16.0.0/12"];
 }
 
---- The category still has transactions pointing at it. Not a 404 and not a
---- server fault: the request is answerable, and the answer is no.
+/// The category still has transactions pointing at it. Not a 404 and not a
+/// server fault: the request is answerable, and the answer is no.
 error CategoryInUse(message: text) = 409 : "kategoriyada tranzaksiyalar bor";
 
---- Every other error this app raises carries a default status (errors.md
---- §4.3). This arm exists so an unexpected fault answers the same envelope
---- shape as everything else, and says nothing about what failed.
+/// Every other error this app raises carries a default status (errors.md
+/// §4.3). This arm exists so an unexpected fault answers the same envelope
+/// shape as everything else, and says nothing about what failed.
 errorHandler (e) {
     catch (err) {
         return internalError();
@@ -42,5 +42,5 @@ errorHandler (e) {
 }
 
 function main() {
-    serve(int(env("PORT") ?? "8080"));
+    serve();
 }

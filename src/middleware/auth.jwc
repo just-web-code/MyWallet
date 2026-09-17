@@ -1,15 +1,15 @@
 namespace middleware.auth;
 
---- Bearer JWT. `provides` is what makes `context.account_id` typed and
---- checkable (middleware.md §6.1); 0.9.x used an untyped
---- `setContext("userId", …)` / `context("userId")` pair, so a typo in
---- either half was a runtime null rather than a compile error.
+/// Bearer JWT. `provides` is what makes `context.account_id` typed and
+/// checkable (middleware.md §6.1); 0.9.x used an untyped
+/// `setContext("userId", …)` / `context("userId")` pair, so a typo in
+/// either half was a runtime null rather than a compile error.
 middleware RequireAuth provides account_id: int {
     let raw = request.header("authorization") or throw Unauthorized("token yo'q");
-    let token = string.strip_prefix($raw, "Bearer ");
+    let token = string.strip_prefix(@raw, "Bearer ");
 
     let secret = env("JWT_SECRET") or throw Unauthorized("server sozlanmagan");
-    let claims = jwt.verify($token, $secret) or throw Unauthorized("token yaroqsiz");
+    let claims = jwt.verify(@token, @secret) or throw Unauthorized("token yaroqsiz");
 
-    context.account_id = int($claims.sub);
+    context.account_id = int(@claims.sub);
 }

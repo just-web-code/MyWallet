@@ -12,9 +12,9 @@ routes "/wallets" use RequireAuth, RateLimit {
 
     route POST "" {
         let req = request.body() as CreateWalletRequest;
-        let w = WalletService.create(context.account_id, $req);
+        let w = WalletService.create(context.account_id, @req);
 
-        return created(json($w)) with { "Location": "/wallets/" + string.of($w.id) };
+        return created(json(@w)) with { Location: "/wallets/" + string.of(@w.id) };
     }
 }
 
@@ -27,7 +27,7 @@ routes "/wallets/{id: int}" use RequireAuth, RateLimit {
         WalletService.owned(@id, context.account_id);
         let req = request.body() as UpdateWalletRequest;
 
-        return json(WalletService.update(@id, $req));
+        return json(WalletService.update(@id, @req));
     }
 
     route DELETE "" {

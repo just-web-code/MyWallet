@@ -7,79 +7,108 @@ import services.categories;
 import services.wallets;
 
 service TransactionService {
-    --- Book a transaction and move the balance in the same transaction, so
-    --- the ledger and the running total can never drift. Income adds,
-    --- expense subtracts; the category's counter is bumped alongside.
+    /// Book a transaction and move the balance in the same transaction, so
+    /// the ledger and the running total can never drift. Income adds,
+    /// expense subtracts; the category's counter is bumped alongside.
     function create(account_id: int, wallet_id: int, req: CreateTransactionRequest) {
         transaction {
-            let income = $req.is_income ?? false;
-            let delta = $income ? $req.amount : 0 - $req.amount;
+            let income = @req.is_income ?? false;
+            let delta = @income ? @req.amount : 0 - @req.amount;
 
-            let t = insert into App.public.Transactions {
-                wallet_id   = $wallet_id,
-                category_id = $req.category_id,
-                amount      = $req.amount,
-                is_income   = $income,
-                description = $req.description ?? "",
-                user_id     = $account_id
-            } as { id, wallet_id, category_id, amount, is_income, description, created_at };
+            let t = insert Transactions into App.public.Transactions {
+                wallet_id   = @wallet_id,
+                category_id = @req.category_id,
+                amount      = @req.amount,
+                is_income   = @income,
+                description = @req.description ?? "",
+                user_id     = @account_id
+            }
+                as {
+                    Transactions.id,
+                    Transactions.wallet_id,
+                    Transactions.category_id,
+                    Transactions.amount,
+                    Transactions.is_income,
+                    Transactions.description,
+                    Transactions.created_at
+                };
 
-            WalletService.adjust($wallet_id, $delta);
-            CategoryService.bump($req.category_id);
+            WalletService.adjust(@wallet_id, @delta);
+            CategoryService.bump(@req.category_id);
 
-            return $t;
+            return @t;
         }
     }
 
-    --- One page of a wallet's ledger, newest first, with the total.
-    ---
-    --- Keyset, not offset: v1 has no `offset` (queries.md §9.2) and this is
-    --- why. An offset page re-walks every row it skips, and a row inserted
-    --- while a client is paging shifts every later page by one, so entries
-    --- are silently seen twice or not at all. A ledger is exactly the shape
-    --- that breaks under that — new rows land at the front.
-    ---
-    --- `created_at desc, id desc` is a total order once the primary key is
-    --- appended, which is what `page` requires.
+    /// One page of a wallet's ledger, newest first, with the total.
+    ///
+    /// Keyset, not offset: v1 has no `offset` (queries.md §9.2) and this is
+    /// why. An offset page re-walks every row it skips, and a row inserted
+    /// while a client is paging shifts every later page by one, so entries
+    /// are silently seen twice or not at all. A ledger is exactly the shape
+    /// that breaks under that — new rows land at the front.
+    ///
+    /// `created_at desc, id desc` is a total order once the primary key is
+    /// appended, which is what `page` requires.
     function list(wallet_id: int, after: text?, size: int) {
         let total = select T from App.public.Transactions
-            where wallet_id == $wallet_id
-            as { n: count(T.id) }
+            where T.wallet_id == @wallet_id
+            as {
+                n: count(T.id)
+            }
             first;
 
         let page = select T from App.public.Transactions
-            where wallet_id == $wallet_id
-            as { id, category_id, amount, is_income, description, created_at }
-            orderby created_at desc, id desc
-            page after $after size $size;
+            where T.wallet_id == @wallet_id
+            as {
+                T.id,
+                T.category_id,
+                T.amount,
+                T.is_income,
+                T.description,
+                T.created_at
+            }
+            orderby T.created_at desc, T.id desc
+            page after @after size @size;
 
         return {
-            items:    $page.items,
-            next:     $page.next,
-            has_more: $page.has_more,
-            total:    $total.n
+            items: @page.items,
+            next: @page.next,
+            has_more: @page.has_more,
+            total: @total.n
         };
     }
 
     function owned(id: int, account_id: int) {
         let t = select T from App.public.Transactions
-            where id == $id
-            as { id, user_id, wallet_id, category_id, amount, is_income, description, created_at }
+            where T.id == @id
+            as {
+                T.id,
+                T.user_id,
+                T.wallet_id,
+                T.category_id,
+                T.amount,
+                T.is_income,
+                T.description,
+                T.created_at
+            }
             first or throw NotFound("tranzaksiya topilmadi");
 
-        if ($t.user_id != $account_id) {
+        if (@t.user_id != @account_id) {
             throw Forbidden("bu tranzaksiya sizniki emas");
         }
-        return $t;
+        return @t;
     }
 
-    --- Reverse the balance effect, then delete — both in one transaction.
+    /// Reverse the balance effect, then delete — both in one transaction.
     function remove(id: int, wallet_id: int, amount: int, is_income: boolean) {
         transaction {
-            let delta = $is_income ? 0 - $amount : $amount;
-            WalletService.adjust($wallet_id, $delta);
-            delete from App.public.Transactions where id == $id as { id } first
-                or throw NotFound("tranzaksiya topilmadi");
+            let delta = @is_income ? 0 - @amount : @amount;
+            WalletService.adjust(@wallet_id, @delta);
+            delete Transactions from App.public.Transactions
+                where Transactions.id == @id
+                as { Transactions.id }
+                first or throw NotFound("tranzaksiya topilmadi");
         }
     }
 }

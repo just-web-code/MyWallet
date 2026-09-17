@@ -5,70 +5,87 @@ import db.schema;
 import dto.categories;
 
 service CategoryService {
-    --- The duplicate-name refusal comes from `unique (user_id, name)`, not
-    --- from a lookup first: the 0.9.x pre-check is a race two concurrent
-    --- creates both pass.
+    /// The duplicate-name refusal comes from `unique (user_id, name)`, not
+    /// from a lookup first: the 0.9.x pre-check is a race two concurrent
+    /// creates both pass.
     function create(account_id: int, req: CreateCategoryRequest) {
-        return insert into App.public.Categories {
-            user_id     = $account_id,
-            name        = $req.name,
-            description = $req.description ?? ""
-        } as { id, name, description, usage_count, created_at };
+        return insert Categories into App.public.Categories {
+            user_id     = @account_id,
+            name        = @req.name,
+            description = @req.description ?? ""
+        }
+            as {
+                Categories.id,
+                Categories.name,
+                Categories.description,
+                Categories.usage_count,
+                Categories.created_at
+            };
     }
 
     function list(account_id: int) {
         return select C from App.public.Categories
-            where user_id == $account_id
-            as { id, name, description, usage_count, created_at }
-            orderby usage_count desc, id asc
+            where C.user_id == @account_id
+            as { C.id, C.name, C.description, C.usage_count, C.created_at }
+            orderby C.usage_count desc, C.id asc
             limit 200;
     }
 
     function owned(id: int, account_id: int) {
         let c = select C from App.public.Categories
-            where id == $id
-            as { id, user_id, name, description, usage_count, created_at }
+            where C.id == @id
+            as { C.id, C.user_id, C.name, C.description, C.usage_count, C.created_at }
             first or throw NotFound("kategoriya topilmadi");
 
-        if ($c.user_id != $account_id) {
+        if (@c.user_id != @account_id) {
             throw Forbidden("bu kategoriya sizniki emas");
         }
-        return $c;
+        return @c;
     }
 
     function update(id: int, req: UpdateCategoryRequest) {
-        return update App.public.Categories
-            set ...$req
-            where id == $id
-            as { id, name, description, usage_count, created_at }
+        return update Categories of App.public.Categories
+            set ...@req
+            where Categories.id == @id
+            as {
+                Categories.id,
+                Categories.name,
+                Categories.description,
+                Categories.usage_count,
+                Categories.created_at
+            }
             first or throw NotFound("kategoriya topilmadi");
     }
 
     function bump(id: int) {
-        update App.public.Categories
-            set usage_count = usage_count + 1
-            where id == $id
-            as { id }
+        update Categories of App.public.Categories
+            set usage_count = Categories.usage_count + 1
+            where Categories.id == @id
+            as { Categories.id }
             first or throw NotFound("kategoriya topilmadi");
     }
 
-    --- Refuse while the category still has history behind it.
-    ---
-    --- The foreign key from `transaction` is deliberately not cascading —
-    --- deleting a category must not erase financial records — so without
-    --- this check the delete fails on the constraint with a message about
-    --- `fk_transaction__category_id`, which is not an answer for a client.
+    /// Refuse while the category still has history behind it.
+    ///
+    /// The foreign key from `transaction` is deliberately not cascading —
+    /// deleting a category must not erase financial records — so without
+    /// this check the delete fails on the constraint with a message about
+    /// `fk_transaction__category_id`, which is not an answer for a client.
     function remove(id: int) {
         let used = select T from App.public.Transactions
-            where category_id == $id
-            as { n: count(T.id) }
+            where T.category_id == @id
+            as {
+                n: count(T.id)
+            }
             first;
 
-        if ($used.n > 0) {
+        if (@used.n > 0) {
             throw CategoryInUse("avval tranzaksiyalarni o'chiring");
         }
 
-        delete from App.public.Categories where id == $id as { id } first
-            or throw NotFound("kategoriya topilmadi");
+        delete Categories from App.public.Categories
+            where Categories.id == @id
+            as { Categories.id }
+            first or throw NotFound("kategoriya topilmadi");
     }
 }

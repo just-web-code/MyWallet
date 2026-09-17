@@ -7,15 +7,15 @@ import services.auth;
 routes "/auth" use StrictRateLimit {
     route POST "register" {
         let req = request.body() as RegisterRequest;
-        let account = AuthService.register($req);
+        let account = AuthService.register(@req);
 
-        return created(json($account));
+        return created(json(@account));
     }
 
     route POST "login" {
         let req = request.body() as LoginRequest;
-        let token = AuthService.login($req);
+        let token = AuthService.login(@req);
 
-        return json({ token: $token });
+        return json({ token: @token });
     }
 }

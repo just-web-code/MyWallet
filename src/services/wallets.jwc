@@ -6,73 +6,89 @@ import dto.wallets;
 
 service WalletService {
     function create(account_id: int, req: CreateWalletRequest) {
-        return insert into App.public.Wallets {
-            user_id  = $account_id,
-            name     = $req.name,
-            currency = $req.currency,
-            balance  = $req.balance ?? 0
-        } as { id, name, balance, currency, created_at };
+        return insert Wallets into App.public.Wallets {
+            user_id  = @account_id,
+            name     = @req.name,
+            currency = @req.currency,
+            balance  = @req.balance ?? 0
+        }
+            as {
+                Wallets.id,
+                Wallets.name,
+                Wallets.balance,
+                Wallets.currency,
+                Wallets.created_at
+            };
     }
 
     function list(account_id: int) {
         return select W from App.public.Wallets
-            where user_id == $account_id
-            as { id, name, balance, currency, created_at }
-            orderby created_at desc
+            where W.user_id == @account_id
+            as { W.id, W.name, W.balance, W.currency, W.created_at }
+            orderby W.created_at desc
             limit 200;
     }
 
-    --- Fetch, and separate "does not exist" from "not yours".
-    ---
-    --- Two statuses on purpose, carried over from 0.9.x: 404 for a wallet
-    --- that is not there, 403 for one that is someone else's. It does leak
-    --- the existence of an id to an authenticated caller; the alternative
-    --- is answering 404 for both, which hides it. Kept as it was because
-    --- this is a port, and the choice belongs to whoever owns the API.
+    /// Fetch, and separate "does not exist" from "not yours".
+    ///
+    /// Two statuses on purpose, carried over from 0.9.x: 404 for a wallet
+    /// that is not there, 403 for one that is someone else's. It does leak
+    /// the existence of an id to an authenticated caller; the alternative
+    /// is answering 404 for both, which hides it. Kept as it was because
+    /// this is a port, and the choice belongs to whoever owns the API.
     function owned(id: int, account_id: int) {
         let w = select W from App.public.Wallets
-            where id == $id
-            as { id, user_id, name, balance, currency, created_at }
+            where W.id == @id
+            as { W.id, W.user_id, W.name, W.balance, W.currency, W.created_at }
             first or throw NotFound("hamyon topilmadi");
 
-        if ($w.user_id != $account_id) {
+        if (@w.user_id != @account_id) {
             throw Forbidden("bu hamyon sizniki emas");
         }
-        return $w;
+        return @w;
     }
 
     function update(id: int, req: UpdateWalletRequest) {
-        return update App.public.Wallets
-            set ...$req
-            where id == $id
-            as { id, name, balance, currency, created_at }
+        return update Wallets of App.public.Wallets
+            set ...@req
+            where Wallets.id == @id
+            as {
+                Wallets.id,
+                Wallets.name,
+                Wallets.balance,
+                Wallets.currency,
+                Wallets.created_at
+            }
             first or throw NotFound("hamyon topilmadi");
     }
 
-    --- The wallet and its ledger, in one transaction.
-    ---
-    --- The foreign key is `on delete cascade`, so the explicit delete of the
-    --- transactions is not what removes them — it is what makes the order
-    --- visible to a reader, and it costs one statement.
+    /// The wallet and its ledger, in one transaction.
+    ///
+    /// The foreign key is `on delete cascade`, so the explicit delete of the
+    /// transactions is not what removes them — it is what makes the order
+    /// visible to a reader, and it costs one statement.
     function remove(id: int) {
         transaction {
-            delete from App.public.Transactions where wallet_id == $id;
-            delete from App.public.Wallets where id == $id as { id } first
-                or throw NotFound("hamyon topilmadi");
+            delete Transactions from App.public.Transactions
+                where Transactions.wallet_id == @id;
+            delete Wallets from App.public.Wallets
+                where Wallets.id == @id
+                as { Wallets.id }
+                first or throw NotFound("hamyon topilmadi");
         }
     }
 
-    --- Shift a balance by `delta`, negative for an expense.
-    ---
-    --- `set balance = balance + $delta` is one statement: the 0.9.x version
-    --- read the row, added in the application, and wrote it back, which two
-    --- concurrent transactions against one wallet can interleave to lose an
-    --- update. Postgres does the arithmetic on the row it has locked.
+    /// Shift a balance by `delta`, negative for an expense.
+    ///
+    /// `set balance = balance + @delta` is one statement: the 0.9.x version
+    /// read the row, added in the application, and wrote it back, which two
+    /// concurrent transactions against one wallet can interleave to lose an
+    /// update. Postgres does the arithmetic on the row it has locked.
     function adjust(id: int, delta: int) {
-        update App.public.Wallets
-            set balance = balance + $delta
-            where id == $id
-            as { id }
+        update Wallets of App.public.Wallets
+            set balance = Wallets.balance + @delta
+            where Wallets.id == @id
+            as { Wallets.id }
             first or throw NotFound("hamyon topilmadi");
     }
 }
