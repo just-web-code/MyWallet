@@ -14,14 +14,20 @@ service StatsService {
     function summary(account_id: int) {
         let wallets = select W from App.public.Wallets
             where W.user_id == @account_id
-            as { count: count(W.id), balance: sum(W.balance) }
+            as {
+                count: count(W.id),
+                balance: sum(W.balance)
+            }
             first;
 
         // One row per `is_income` value — at most two, not one per row.
         let buckets = select T from App.public.Transactions
             where T.user_id == @account_id
             group by T.is_income
-            as { T.is_income, summa: sum(T.amount) };
+            as {
+                T.is_income,
+                summa: sum(T.amount)
+            };
 
         let income = 0;
         let expense = 0;
@@ -35,14 +41,14 @@ service StatsService {
         }
 
         return {
-            wallets:       @wallets.count,
+            wallets: @wallets.count,
             // `sum` answers `numeric`, carried as a JSON string so no float
             // touches money (types.md §2.1). These are whole so'm and the
             // client reads them as numbers, so they are narrowed back here.
             total_balance: int(@wallets.balance ?? 0),
-            total_income:  @income,
+            total_income: @income,
             total_expense: @expense,
-            net:           @income - @expense
+            net: @income - @expense
         };
     }
 }

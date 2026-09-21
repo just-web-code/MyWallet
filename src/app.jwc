@@ -4,7 +4,6 @@ namespace app;
 ///
 /// Auth (register/login + JWT), wallets, categories, transactions with
 /// atomic balance updates, and a per-user rollup.
-
 database App : Postgres {
     init() {
         pool_size         = 10;

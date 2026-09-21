@@ -31,7 +31,7 @@ service AuthService {
     /// `Unauthorized` whether the email is unknown or the password is
     /// wrong: answering differently turns the endpoint into an account
     /// enumerator.
-    function login(req: LoginRequest) -> text {
+    function login(req: LoginRequest): text {
         let account = select U from App.public.Users
             where U.email == @req.email
             as { U.id, U.password_hash }
