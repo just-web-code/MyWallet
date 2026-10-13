@@ -145,9 +145,8 @@ and every `ApiService` call rejects with an `ApiRequestError` that keeps
 
 ## Notes
 
-- **Requires jwc ≥ 0.8.2.** Entity `index` / `unique(a, b)`, `??`, ternaries,
-  `+=`, aggregate projections with `group by`, and the unified error envelope
-  are all post-0.6 features.
+- **Requires jwc 1.1.0**, exactly — `jwcproj.json` names it, and a compiler
+  that does not match refuses the project. CI installs the same release.
 - **Money is stored as an integer** (`int`, whole so'm). JWC binds small integers
   as `int4`, so the money columns are `int` rather than `bigint` / `decimal` —
   amounts up to ~2.1B per row.
